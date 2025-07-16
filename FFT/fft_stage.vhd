@@ -16,6 +16,8 @@ generic (
 port (
 	clk , rst : in std_logic;
 	ce : in std_logic;
+	i_sync : in std_logic;
+	o_sync : out std_logic;
 	data_in : in std_logic_vector ( (2 * I_WIDTH) - 1 downto 0 ); --because we have the first I_width bit real number the next ones imaginary number
 	data_out : out std_logic_vector ( (2* O_WIDTH) - 1 downto 0 )
 
@@ -45,7 +47,32 @@ signal b_o_valid : std_logic:= '0';
 --===== Signal for the delayed output , for the output that we get from the buffer
 signal o_buffered : signed ((2 * OWIDTH) - 1 downto 0 ):= ( others => '0');
 
+--========Signal auxiliary for the sync
+signal start : std_logic;
 begin
+
+--====Synchronization to the first data of the frame
+process ( clk , rst)
+begin
+	if rising_Edge ( clk) then
+		if i_sync = '1' or start = '1' then -- i_sync only one pulse, while we need start to have a stable 1 could also do like that
+--
+--	start <= '1' when i_sync ='1' else
+--			start_Reg;
+--
+-- process clk
+-- start_Reg <= start
+--
+--sync_pipeline <= sync_pipeline(N-2 downto 0) & butterfly_sync; , nice pattern for sync , and not use many times different signals , nice
+			start <= '1';
+		end if;
+		if i_buf_Cnt ( i_buf_cnt'high) = '1' and start = '1' then
+			butterfly_sync = '1';
+			start <= '0';
+		end if;
+			
+	
+end process ;
 
 INPUT_COUNTER : process ( clk , rst )
 begin
